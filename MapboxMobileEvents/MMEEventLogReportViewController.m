@@ -14,7 +14,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    UINavigationBar *navBar = [[UINavigationBar alloc] initWithFrame:CGRectMake(0, [UIApplication sharedApplication].statusBarFrame.size.height, self.view.frame.size.width, 80 + [UIApplication sharedApplication].statusBarFrame.size.height)];
+    UINavigationBar *navBar = [[UINavigationBar alloc] initWithFrame:CGRectMake(0, [UIApplication sharedApplication].statusBarFrame.size.height, self.view.frame.size.height, 15 + [UIApplication sharedApplication].statusBarFrame.size.height)];
     navBar.backgroundColor = [UIColor colorWithRed:(247.0f/255.0f) green:(247.0f/255.0f) blue:(247.0f/255.0f) alpha:1];
     
     UINavigationItem *navItem = [[UINavigationItem alloc] initWithTitle:@"Profiler"];
@@ -28,7 +28,7 @@
     [self.view addSubview:navBar];
     navBar.layer.zPosition = 1;
     
-    UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, [UIApplication sharedApplication].statusBarFrame.size.height)];
+    UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.height, [UIApplication sharedApplication].statusBarFrame.size.height)];
     [self.view addSubview:view];
     view.backgroundColor = [UIColor colorWithRed:(247.0f/255.0f) green:(247.0f/255.0f) blue:(247.0f/255.0f) alpha:1];
     view.layer.zPosition = -1;
@@ -38,15 +38,27 @@
     [controller addScriptMessageHandler:self name:@"complete"];
     [controller addScriptMessageHandler:self name:@"data"];
     configuration.userContentController = controller;
-    self.webView = [[WKWebView alloc] initWithFrame:CGRectMake(0, navBar.frame.size.height, self.view.frame.size.width, self.view.frame.size.height) configuration:configuration];
+    self.webView = [[WKWebView alloc] initWithFrame:CGRectMake(0, navBar.frame.size.height, self.view.frame.size.height, self.view.frame.size.height) configuration:configuration];
     self.webView.UIDelegate = self;
     [self.view addSubview:self.webView];
     
     self.spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-    [self.spinner setFrame:CGRectMake(self.view.frame.size.width/2 - self.spinner.frame.size.width/2, self.view.frame.size.height/2, self.spinner.frame.size.width, self.spinner.frame.size.height)];
+    [self.spinner setFrame:CGRectMake(self.view.frame.size.height/2 - self.spinner.frame.size.height/2, self.view.frame.size.width/2, self.spinner.frame.size.height, self.spinner.frame.size.width)];
     [self.view addSubview:self.spinner];
     
     [self.spinner startAnimating];
+}
+
+- (BOOL)shouldAutorotate {
+    return FALSE;
+}
+
+- (UIInterfaceOrientation)preferredInterfaceOrientationForPresentation {
+    return UIInterfaceOrientationLandscapeLeft;
+}
+
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations {
+    return UIInterfaceOrientationMaskLandscape;
 }
 
 - (void)displayHTMLFromRowsWithDataString:(NSString *)dataString {
