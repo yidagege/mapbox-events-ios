@@ -3,6 +3,7 @@
 #import "MMENSURLSessionWrapper.h"
 #import "MMEEvent.h"
 #import "NSData+MMEGZIP.h"
+#import "MMEEventLogger.h"
 
 @interface MMEAPIClient ()
 
@@ -91,9 +92,17 @@
         NSData *compressedData = [jsonData mme_gzippedData];
         [request setValue:@"gzip" forHTTPHeaderField:MMEAPIClientHeaderFieldContentEncodingKey];
         [request setHTTPBody:compressedData];
+        if (compressedData.length > 7000) {
+            [MMEEventLogger.sharedLogger pushDebugEventWithAttributes:@{MMEDebugEventType: @"Large Compressed Payload",
+                                                                        MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"File size: %.2f KB",(float)compressedData.length/1024.0f]}];
+        }
     } else {
         [request setValue:nil forHTTPHeaderField:MMEAPIClientHeaderFieldContentEncodingKey];
         [request setHTTPBody:jsonData];
+        if (jsonData.length > 7000) {
+            [MMEEventLogger.sharedLogger pushDebugEventWithAttributes:@{MMEDebugEventType: @"Large Uncompressed Payload",
+                                                                        MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"File size: %.2f KB",(float)jsonData.length/1024.0f]}];
+        }
     }
     
     return [request copy];

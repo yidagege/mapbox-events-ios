@@ -42,6 +42,14 @@
     return self;
 }
 
+- (void)pushDebugEventWithAttributes:(MMEMapboxEventAttributes *)attributes {
+    MMEMutableMapboxEventAttributes *combinedAttributes = [MMEMutableMapboxEventAttributes dictionaryWithDictionary:attributes];
+    [combinedAttributes setObject:[self.dateWrapper formattedDateStringForDate:[self.dateWrapper date]] forKey:@"created"];
+//    [combinedAttributes setObject:self.uniqueIdentifer.rollingInstanceIdentifer forKey:@"instance"];
+    MMEEvent *debugEvent = [MMEEvent debugEventWithAttributes:combinedAttributes];
+    [self logEvent:debugEvent];
+}
+
 - (void)logEvent:(MMEEvent *)event {
     if (self.isEnabled) {
         NSLog(@"%@", [NSString stringWithFormat:@"Mapbox Telemetry event %@", event]);

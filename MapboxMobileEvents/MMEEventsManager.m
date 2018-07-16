@@ -31,6 +31,11 @@
 @property (nonatomic, getter=isLocationMetricsEnabled) BOOL locationMetricsEnabled;
 @property (nonatomic) UIBackgroundTaskIdentifier backgroundTaskIdentifier;
 
+@property (nonatomic) NSTimeInterval criticalTimeSeconds;
+@property (nonatomic) NSTimeInterval significantChangeThreshold;
+@property (nonatomic) NSNumber *currentBackgroundTime;
+@property (nonatomic) NSDate *lastUpdatedDate;
+
 @end
 
 @implementation MMEEventsManager
@@ -86,6 +91,8 @@
     [self resumeMetricsCollection];
     
     self.timerManager = [[MMETimerManager alloc] initWithTimeInterval:self.configuration.eventFlushSecondsThreshold target:self selector:@selector(flush)];
+    
+    [self startTimer];
 }
 
 # pragma mark - Public API
@@ -423,6 +430,73 @@
 }
 
 #pragma mark - MMELocationManagerDelegate
+
+// taken from https://stackoverflow.com/questions/20261129/better-alternative-for-nstimer
+- (void)startTimer {
+    __weak id weakSelf = self;
+    __block void (^timer)(void) = ^{
+        
+        double delayInSeconds = 1.0;
+        dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, delayInSeconds * NSEC_PER_SEC);
+        dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+            
+            id strongSelf = weakSelf;
+            
+            if (!strongSelf) {
+                return;
+            }
+            
+            // Schedule the timer again
+            timer();
+        
+            // Always use strongSelf when calling a method or accessing an iVar
+            [strongSelf checkBackgroundTime];
+//            strongSelf->anIVar = 0;
+        });
+    };
+    
+    // Start the timer for the first time
+    timer();
+}
+
+- (void)checkBackgroundTime {
+    @synchronized(self) {
+        NSDate *updateTime = [NSDate date];
+        NSTimeInterval backgroundTimeRemaining =
+        [UIApplication sharedApplication].backgroundTimeRemaining;
+        
+        NSNumber *lastBackgroundTime = self.currentBackgroundTime;
+        if (lastBackgroundTime.doubleValue > 10 &&
+            [updateTime timeIntervalSinceDate:self.lastUpdatedDate] > 15) {
+            // App woken up from suspension but the background time had not expired till then
+//            AppLogError(@"App woken up from abrupt suspension, looks like a bug."
+//                        " Current time: %@ vs Old time: %@",
+//                        @(backgroundTimeRemaining), lastBackgroundTime);
+            [self pushDebugEventWithAttributes:@{MMEDebugEventType: @"Abrupt Suspension",
+                                                 MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"looks like a bug."
+                                                                                    " Current time: %@ vs Old time: %@",
+                                                                                    @(backgroundTimeRemaining), lastBackgroundTime]}];
+            [self pushDebugEventWithAttributes:@{MMEDebugEventType: @"PossibleSuspensionIssue",
+                                                 MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"App woken up from abrupt suspension, time remaining: %@", @(backgroundTimeRemaining)]}];
+        }
+        self.currentBackgroundTime = @(backgroundTimeRemaining);
+        self.lastUpdatedDate = updateTime;
+        
+        [self pushDebugEventWithAttributes:@{MMEDebugEventType: @"Background Time",
+                                             MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"Background Time: %@", self.currentBackgroundTime]}];
+        if (backgroundTimeRemaining <= self.criticalTimeSeconds &&
+            (!lastBackgroundTime || lastBackgroundTime.doubleValue > self.criticalTimeSeconds)) {
+            [self pushDebugEventWithAttributes:@{MMEDebugEventType: @"Critical Time",
+                                                 MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"time remaining %@", @(backgroundTimeRemaining)]}];
+        }
+        else if (lastBackgroundTime &&
+                 ABS(lastBackgroundTime.doubleValue - backgroundTimeRemaining) >
+                 self.significantChangeThreshold) {
+            [self pushDebugEventWithAttributes:@{MMEDebugEventType: @"Significant Background Time Change",
+                                                 MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"%@ to %@", @(lastBackgroundTime.doubleValue), @(backgroundTimeRemaining)]}];
+        }
+    }
+}
 
 - (void)locationManager:(MMELocationManager *)locationManager didUpdateLocations:(NSArray *)locations {
     [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeLocationManager,
