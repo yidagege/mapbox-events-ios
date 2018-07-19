@@ -3,6 +3,8 @@
 #import "MMEEventLogReportViewController.h"
 #import "MMEUINavigation.h"
 #import "MMENSDateWrapper.h"
+#import "MMEUniqueIdentifier.h"
+#import "MMEEventsService.h"
 #import <WebKit/WebKit.h>
 
 @interface MMEEventLogger()
@@ -10,6 +12,8 @@
 @property (nonatomic, copy) NSString *dateForDebugLogFile;
 @property (nonatomic) dispatch_queue_t debugLogSerialQueue;
 @property (nonatomic) MMENSDateWrapper *dateWrapper;
+@property (nonatomic) MMEEventsConfiguration *configuration;
+@property (nonatomic) id<MMEUniqueIdentifer> uniqueIdentifer;
 @property (nonatomic) NSDate *nextLogFileDate;
 @property (nonatomic) NSDateFormatter *dateFormatter;
 @property (nonatomic, getter=isTimeForNewLogFile) BOOL timeForNewLogFile;
@@ -38,6 +42,8 @@
         [self.dateFormatter setTimeZone:[NSTimeZone systemTimeZone]];
         self.dateForDebugLogFile = [self.dateFormatter stringFromDate:[self.dateWrapper date]];
         self.nextLogFileDate = [self.dateWrapper startOfTomorrow];
+        self.configuration = [[MMEEventsService sharedService] configuration];
+        self.uniqueIdentifer = [[MMEUniqueIdentifier alloc] initWithTimeInterval:self.configuration.instanceIdentifierRotationTimeInterval];
     }
     return self;
 }
@@ -48,6 +54,14 @@
         
         [self writeEventToLocalDebugLog:event];
     }
+}
+
+- (void)pushDebugEventWithAttributes:(MMEMapboxEventAttributes *)attributes {
+    MMEMutableMapboxEventAttributes *combinedAttributes = [MMEMutableMapboxEventAttributes dictionaryWithDictionary:attributes];
+    [combinedAttributes setObject:[self.dateWrapper formattedDateStringForDate:[self.dateWrapper date]] forKey:@"created"];
+    [combinedAttributes setObject:self.uniqueIdentifer.rollingInstanceIdentifer forKey:@"instance"];
+    MMEEvent *debugEvent = [MMEEvent debugEventWithAttributes:combinedAttributes];
+    [self logEvent:debugEvent];
 }
 
 #pragma mark - Write to Local File
