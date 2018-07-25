@@ -51,7 +51,7 @@
 
 - (void)displayHTMLFromRowsWithDataString:(NSString *)dataString {
     self.dataString = dataString;
-    [self.webView loadHTMLString:MMELoggerHTML baseURL:nil];
+    [self.webView loadHTMLString:MMELoggerHTML baseURL:[NSURL URLWithString:@"about:blank"]];
 }
 
 -(void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
