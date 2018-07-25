@@ -127,7 +127,10 @@
     
     if (jsonString) {
         NSString *contents = [NSString stringWithFormat:@"[%@]", jsonString];
-        NSString *dataString = [self parseJSONFromFileContents:contents];
+        NSArray *JSON = [NSJSONSerialization JSONObjectWithData:[contents dataUsingEncoding:NSUTF8StringEncoding] options:NSJSONReadingMutableContainers error:nil];
+        NSString *dataString = [self timelineStringFromJSON:JSON];
+        NSMutableDictionary *debugArraysDict = [self debugArraysFromJSON:JSON];
+        //TODO: convert to CSV file and add to share page
         
         [[MMEUINavigation topViewController] presentViewController:logVC animated:YES completion:nil];
         [logVC displayHTMLFromRowsWithDataString:dataString];
@@ -138,10 +141,49 @@
     }
 }
 
-- (NSString *)parseJSONFromFileContents:(NSString *)contents {
-    NSMutableArray *timelineDataArray = [[NSMutableArray alloc] init];
-    NSArray *JSON = [NSJSONSerialization JSONObjectWithData:[contents dataUsingEncoding:NSUTF8StringEncoding] options:NSJSONReadingMutableContainers error:nil];
+- (NSMutableDictionary *)debugArraysFromJSON:(NSArray *)JSON {
+    NSMutableArray *titleArrays = [[NSMutableArray alloc] init];
+    NSMutableDictionary *debugArraysDict = [[NSMutableDictionary alloc] init];
+    if (JSON) {
+        for (NSDictionary *dictionary in JSON) {
+            NSDictionary *eventDict = [dictionary valueForKeyPath:@"debug"];
+            
+            if (eventDict) {
+                [titleArrays addObject:[eventDict valueForKey:@"debug.type"]];
+            }
+        }
+    } else {
+        return nil;
+    }
     
+    NSSet *titleSet = [[NSSet alloc] initWithArray:titleArrays];
+    NSArray *titleArray = [titleSet allObjects];
+    for (NSString *title in titleArray) {
+        [debugArraysDict setObject:@[] forKey:title];
+    }
+    
+    for (NSDictionary *dictionary in JSON) {
+        NSDictionary *eventDict = [dictionary valueForKeyPath:@"debug"];
+        
+        if (eventDict) {
+            NSString *description = [eventDict valueForKey:@"debug.description"];
+            NSString *type = [eventDict valueForKey:@"debug.type"];
+            NSArray *keys = [debugArraysDict allKeys];
+            for (NSString *key in keys) {
+                if ([type isEqualToString:key]) {
+                    NSMutableArray *array = [NSMutableArray arrayWithArray:[debugArraysDict objectForKey:key]];
+                    [array addObject:description];
+                    [debugArraysDict removeObjectForKey:key];
+                    [debugArraysDict setObject:array forKey:key];
+                }
+            }
+        }
+    }
+    return debugArraysDict;
+}
+
+- (NSString *)timelineStringFromJSON:(NSArray *)JSON {
+    NSMutableArray *timelineDataArray = [[NSMutableArray alloc] init];
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     dateFormatter.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSSZ";
     
