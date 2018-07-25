@@ -3,6 +3,7 @@
 #import "MMENSURLSessionWrapper.h"
 #import "MMEEvent.h"
 #import "NSData+MMEGZIP.h"
+#import "MMEEventLogger.h"
 
 @interface MMEAPIClient ()
 
@@ -91,9 +92,13 @@
         NSData *compressedData = [jsonData mme_gzippedData];
         [request setValue:@"gzip" forHTTPHeaderField:MMEAPIClientHeaderFieldContentEncodingKey];
         [request setHTTPBody:compressedData];
+        [MMEEventLogger.sharedLogger pushDebugEventWithAttributes:@{MMEDebugEventType: @"compressedData",
+                                                                    MMEEventKeyLocalDebugDescription: @(compressedData.length)}];
     } else {
         [request setValue:nil forHTTPHeaderField:MMEAPIClientHeaderFieldContentEncodingKey];
         [request setHTTPBody:jsonData];
+        [MMEEventLogger.sharedLogger pushDebugEventWithAttributes:@{MMEDebugEventType: @"data",
+                                                                    MMEEventKeyLocalDebugDescription: @(jsonData.length)}];
     }
     
     return [request copy];
