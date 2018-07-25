@@ -74,12 +74,16 @@
     NSString *path = [[[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
                                                               inDomains:NSUserDomainMask] lastObject].path
                       stringByAppendingPathComponent:@"telemetryLog.html"];
+    NSString *csvPath = [[[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
+                                                              inDomains:NSUserDomainMask] lastObject].path
+                      stringByAppendingPathComponent:@"TelemetryDebug.csv"];
     [htmlString writeToFile:path atomically:YES
                    encoding:NSUTF8StringEncoding error:nil];
     
     NSURL *fileURL = [NSURL fileURLWithPath:path];
+    NSURL *csvFileURL = [NSURL fileURLWithPath:csvPath];
     
-    NSArray *items = @[fileURL];
+    NSArray *items = @[fileURL, csvFileURL];
     
     UIActivityViewController *controller = [[UIActivityViewController alloc]initWithActivityItems:items applicationActivities:nil];
     

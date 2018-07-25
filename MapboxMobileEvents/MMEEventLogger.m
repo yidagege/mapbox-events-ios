@@ -129,8 +129,7 @@
         NSString *contents = [NSString stringWithFormat:@"[%@]", jsonString];
         NSArray *JSON = [NSJSONSerialization JSONObjectWithData:[contents dataUsingEncoding:NSUTF8StringEncoding] options:NSJSONReadingMutableContainers error:nil];
         NSString *dataString = [self timelineStringFromJSON:JSON];
-        NSMutableDictionary *debugArraysDict = [self debugArraysFromJSON:JSON];
-        //TODO: convert to CSV file and add to share page
+        [self writeDebugCSVFromJSON:JSON];
         
         [[MMEUINavigation topViewController] presentViewController:logVC animated:YES completion:nil];
         [logVC displayHTMLFromRowsWithDataString:dataString];
@@ -141,7 +140,7 @@
     }
 }
 
-- (NSMutableDictionary *)debugArraysFromJSON:(NSArray *)JSON {
+- (void)writeDebugCSVFromJSON:(NSArray *)JSON {
     NSMutableArray *titleArrays = [[NSMutableArray alloc] init];
     NSMutableDictionary *debugArraysDict = [[NSMutableDictionary alloc] init];
     if (JSON) {
@@ -153,7 +152,7 @@
             }
         }
     } else {
-        return nil;
+        return;
     }
     
     NSSet *titleSet = [[NSSet alloc] initWithArray:titleArrays];
@@ -179,7 +178,20 @@
             }
         }
     }
-    return debugArraysDict;
+    NSMutableString *csvMutableString = [[NSMutableString alloc] initWithCapacity:0];
+    NSArray *debugKeys = [debugArraysDict allKeys];
+    NSString *formattedKeys = [NSString stringWithFormat:@"%@\n\n\n",[debugKeys componentsJoinedByString:@", "]];
+    [csvMutableString appendString:formattedKeys];
+    for (NSString *key in debugKeys) {
+        NSArray *debugContents = [debugArraysDict objectForKey:key];
+        NSString *formattedContents = [NSString stringWithFormat:@"%@\n", [debugContents componentsJoinedByString:@", "]];
+        [csvMutableString appendString:formattedContents];
+    }
+    
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *docDirectory = [paths objectAtIndex:0];
+    NSString *path = [docDirectory stringByAppendingPathComponent:[NSString stringWithFormat:@"TelemetryDebug.csv"]];
+    [csvMutableString writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:nil];
 }
 
 - (NSString *)timelineStringFromJSON:(NSArray *)JSON {
