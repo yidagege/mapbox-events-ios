@@ -111,9 +111,7 @@
 
 #pragma mark - HTML Generation
 
-- (void)readAndDisplayLogFileFromDate:(NSDate *)logDate {
-    MMEEventLogReportViewController *logVC = [[MMEEventLogReportViewController alloc] init];
-    
+- (NSArray *)getJSONFromDate:(NSDate *)logDate {
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     dateFormatter.dateFormat = @"yyyy'-'MM'-'dd";
     
@@ -128,21 +126,33 @@
     if (jsonString) {
         NSString *contents = [NSString stringWithFormat:@"[%@]", jsonString];
         NSArray *JSON = [NSJSONSerialization JSONObjectWithData:[contents dataUsingEncoding:NSUTF8StringEncoding] options:NSJSONReadingMutableContainers error:nil];
+        
+        return JSON;
+    } else {
+        if (self.isEnabled) {
+            NSLog(@"error reading file: %@", jsonString);
+        }
+        return nil;
+    }
+}
+
+- (void)readAndDisplayLogFileFromDate:(NSDate *)logDate {
+    MMEEventLogReportViewController *logVC = [[MMEEventLogReportViewController alloc] init];
+    
+    NSArray *JSON = [self getJSONFromDate:logDate];
+    
+    if (JSON) {
         NSString *dataString = [self timelineStringFromJSON:JSON];
         [self writeDebugCSVFromJSON:JSON];
         
         [[MMEUINavigation topViewController] presentViewController:logVC animated:YES completion:nil];
         [logVC displayHTMLFromRowsWithDataString:dataString];
-    } else {
-        if (self.isEnabled) {
-            NSLog(@"error reading file: %@", jsonString);
-        }
     }
 }
 
-- (void)writeDebugCSVFromJSON:(NSArray *)JSON {
+- (NSMutableDictionary *)debugDictionaryFromJSON:(NSArray *)JSON {
     NSMutableArray *titleArrays = [[NSMutableArray alloc] init];
-    NSMutableDictionary *debugArraysDict = [[NSMutableDictionary alloc] init];
+    NSMutableDictionary *debugDict = [[NSMutableDictionary alloc] init];
     if (JSON) {
         for (NSDictionary *dictionary in JSON) {
             NSDictionary *eventDict = [dictionary valueForKeyPath:@"debug"];
@@ -152,13 +162,13 @@
             }
         }
     } else {
-        return;
+        return nil;
     }
     
     NSSet *titleSet = [[NSSet alloc] initWithArray:titleArrays];
     NSArray *titleArray = [titleSet allObjects];
     for (NSString *title in titleArray) {
-        [debugArraysDict setObject:@[] forKey:title];
+        [debugDict setObject:@[] forKey:title];
     }
     
     for (NSDictionary *dictionary in JSON) {
@@ -167,26 +177,77 @@
         if (eventDict) {
             NSString *description = [eventDict valueForKey:@"debug.description"];
             NSString *type = [eventDict valueForKey:@"debug.type"];
-            NSArray *keys = [debugArraysDict allKeys];
+            NSArray *keys = [debugDict allKeys];
             for (NSString *key in keys) {
                 if ([type isEqualToString:key]) {
-                    NSMutableArray *array = [NSMutableArray arrayWithArray:[debugArraysDict objectForKey:key]];
+                    NSMutableArray *array = [NSMutableArray arrayWithArray:[debugDict objectForKey:key]];
                     [array addObject:description];
-                    [debugArraysDict removeObjectForKey:key];
-                    [debugArraysDict setObject:array forKey:key];
+                    [debugDict removeObjectForKey:key];
+                    [debugDict setObject:array forKey:key];
                 }
             }
         }
     }
+    return debugDict;
+}
+
+- (NSMutableString *)convertToCSVFromDebugDict:(NSMutableDictionary *)debugDict {
     NSMutableString *csvMutableString = [[NSMutableString alloc] initWithCapacity:0];
-    NSArray *debugKeys = [debugArraysDict allKeys];
+    NSArray *debugKeys = [debugDict allKeys];
     NSString *formattedKeys = [NSString stringWithFormat:@"%@\n\n\n",[debugKeys componentsJoinedByString:@", "]];
     [csvMutableString appendString:formattedKeys];
+    
+    NSUInteger highestCount = 0;
+    
     for (NSString *key in debugKeys) {
-        NSArray *debugContents = [debugArraysDict objectForKey:key];
-        NSString *formattedContents = [NSString stringWithFormat:@"%@\n", [debugContents componentsJoinedByString:@", "]];
-        [csvMutableString appendString:formattedContents];
+        NSArray *debugContents = [debugDict objectForKey:key];
+        if (debugContents.count > highestCount) {
+            highestCount = debugContents.count;
+        }
     }
+    
+    for (NSUInteger i = 0; i < highestCount; i++) {
+        for (NSString *key in debugKeys) {
+            NSArray *debugContents = [debugDict objectForKey:key];
+            NSString *formattedContents;
+            
+            if (i < [debugContents count]) {
+                NSString *debugString = [NSString stringWithFormat:@"%@",debugContents[i]];
+                if ([debugString containsString:@"\""]) {
+                    debugString = [debugString stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""];
+                }
+                if ([debugString containsString:@","]) {
+                    debugString = [debugString stringByReplacingOccurrencesOfString:@"," withString:@""];
+                }
+                if ([debugString containsString:@" "]) {
+                    debugString = [NSString stringWithFormat:@"\"%@\"",debugString];
+                }
+                
+                if (key == debugKeys.lastObject) {
+                    formattedContents = [NSString stringWithFormat:@"%@\n", debugString];
+                } else {
+                    formattedContents = [NSString stringWithFormat:@"%@, ",debugString];
+                }
+            } else if (key == debugKeys.lastObject) {
+                formattedContents = [NSString stringWithFormat:@"\n"];
+            } else {
+                formattedContents = [NSString stringWithFormat:@"nil, "];
+            }
+            if (formattedContents != nil) {
+                [csvMutableString appendString:formattedContents];
+            }
+        }
+    }
+    return csvMutableString;
+}
+
+- (void)writeDebugCSVFromJSON:(NSArray *)JSON {
+    NSMutableDictionary *debugDict = [self debugDictionaryFromJSON:JSON];
+    if (!debugDict) {
+        return;
+    }
+    
+    NSMutableString *csvMutableString = [self convertToCSVFromDebugDict:debugDict];
     
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString *docDirectory = [paths objectAtIndex:0];
