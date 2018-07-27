@@ -101,6 +101,9 @@
                                                                     MMEEventKeyLocalDebugDescription: @(jsonData.length)}];
     }
     
+    [MMEEventLogger.sharedLogger pushDebugEventWithAttributes:@{MMEDebugEventType: @"events.count",
+                                                                MMEEventKeyLocalDebugDescription: @(events.count)}];
+    
     return [request copy];
 }
 
