@@ -425,6 +425,10 @@
 #define MMEEventTypeLocalDebug __NS_SYMBOL(MMEEventTypeLocalDebug)
 #endif
 
+#ifndef MMEEventTypeOfflineDownload
+#define MMEEventTypeOfflineDownload __NS_SYMBOL(MMEEventTypeOfflineDownload)
+#endif
+
 #ifndef MMEEventGestureSingleTap
 #define MMEEventGestureSingleTap __NS_SYMBOL(MMEEventGestureSingleTap)
 #endif
@@ -633,12 +637,12 @@
 #define MMELoggerHTML __NS_SYMBOL(MMELoggerHTML)
 #endif
 
-#ifndef MMELoggerShareableHTML
-#define MMELoggerShareableHTML __NS_SYMBOL(MMELoggerShareableHTML)
-#endif
-
 #ifndef kMMEReachabilityChangedNotification
 #define kMMEReachabilityChangedNotification __NS_SYMBOL(kMMEReachabilityChangedNotification)
+#endif
+
+#ifndef MMELoggerShareableHTML
+#define MMELoggerShareableHTML __NS_SYMBOL(MMELoggerShareableHTML)
 #endif
 
 #ifndef MMELocationManagerDistanceFilter
