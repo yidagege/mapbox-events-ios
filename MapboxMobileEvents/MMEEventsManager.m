@@ -346,50 +346,14 @@
     }
 }
 
-- (void)enqueueEventWithName:(NSString *)name {
-    [self createAndPushEventBasedOnName:name attributes:nil];
-}
-
-- (void)enqueueEventWithName:(NSString *)name attributes:(MMEMapboxEventAttributes *)attributes {
-    [self createAndPushEventBasedOnName:name attributes:attributes];
-}
-
-- (void)createAndPushEventBasedOnName:(NSString *)name attributes:(NSDictionary *)attributes {
-    MMEEvent *event = nil;
-    if ([name isEqualToString:MMEEventTypeMapLoad]) {
-        event = [MMEEvent mapLoadEventWithDateString:[self.dateWrapper formattedDateStringForDate:[self.dateWrapper date]]
-                                     commonEventData:self.commonEventData];
-    } else if ([name isEqualToString:MMEEventTypeMapTap]) {
-        event = [MMEEvent mapTapEventWithDateString:[self.dateWrapper formattedDateStringForDate:[self.dateWrapper date]]
-                                         attributes:attributes];
-    } else if ([name isEqualToString:MMEEventTypeMapDragEnd]) {
-        event = [MMEEvent mapDragEndEventWithDateString:[self.dateWrapper formattedDateStringForDate:[self.dateWrapper date]]
-                                             attributes:attributes];
-    } else if ([name isEqualToString:MMEventTypeOfflineDownloadStart]) {
-        event = [MMEEvent mapOfflineDownloadStartEventWithDateString:[self.dateWrapper formattedDateStringForDate:[self.dateWrapper date]] attributes:attributes];
-    } else if ([name isEqualToString:MMEventTypeOfflineDownloadEnd]) {
-        event = [MMEEvent mapOfflineDownloadEndEventWithDateString:[self.dateWrapper formattedDateStringForDate:[self.dateWrapper date]] attributes:attributes];
-    }
-    
-    if ([name hasPrefix:MMENavigationEventPrefix]) {
-        event = [MMEEvent navigationEventWithName:name attributes:attributes];
-    }
-
-    if ([name hasPrefix:MMEVisionEventPrefix]) {
-        event = [MMEEvent visionEventWithName:name attributes:attributes];
-    }
-    
-    if ([name hasPrefix:MMESearchEventPrefix]) {
-        event = [MMEEvent searchEventWithName:name attributes:attributes];
-    }
-
+- (void)enqueueEvent:(MMEEvent *)event {
     if (event) {
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypePush,
                                              MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"Pushing event: %@", event]}];
         [self pushEvent:event];
     } else {
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypePush,
-                                             MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"Unknown event: %@", event]}];
+                                             MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"Event can't be nil"]}];
     }
 }
 

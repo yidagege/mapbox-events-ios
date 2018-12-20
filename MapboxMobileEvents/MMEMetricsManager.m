@@ -154,7 +154,7 @@
         return nil;
     }
     
-    MMEEvent *telemetryMetrics = [MMEEvent telemetryMetricsEventWithDateString:[self.dateWrapper formattedDateStringForDate:[self.dateWrapper date]] attributes:[self attributes]];
+    MMEEvent *telemetryMetrics = [MMEEvent telemetryMetricsEventWithAttributes:[self attributes]];
     [MMEEventLogger.sharedLogger logEvent:telemetryMetrics];
     
     return telemetryMetrics;

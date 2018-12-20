@@ -26,14 +26,13 @@ describe(@"MMEMetricsManager", ^{
         __block NSURLRequest *requestFake;
         
         beforeEach(^{
-            NSString *dateString = @"A nice date";
             NSDictionary *attributes = @{@"attribute1": @"a nice attribute"};
             
             dateFormatter = [[NSDateFormatter alloc] init];
             dateFormatter.dateFormat = @"yyyy-MM-dd";
             
-            MMEEvent *event1 = [MMEEvent mapTapEventWithDateString:dateString attributes:attributes];
-            MMEEvent *event2 = [MMEEvent mapTapEventWithDateString:dateString attributes:attributes];
+            MMEEvent *event1 = [MMEEvent mapTapEventWithAttributes:attributes];
+            MMEEvent *event2 = [MMEEvent mapTapEventWithAttributes:attributes];
             eventQueue = [[NSArray alloc] initWithObjects:event1, event2, nil];
             
             requestFake = [[NSURLRequest alloc] initWithURL:[NSURL URLWithString:@"https://areallyniceURL"]];

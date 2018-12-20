@@ -2,8 +2,20 @@
 #import "MMEConstants.h"
 #import "MMECommonEventData.h"
 #import "MMEReachability.h"
+#import "MMENSDateWrapper.h"
 
 @implementation MMEEvent
+
++ (instancetype)eventWithName:(NSString *)name attributes:(NSDictionary *)attributes {
+    MMEEvent *event = [[MMEEvent alloc] init];
+    event.name = name;
+    NSMutableDictionary *commonAttributes = [NSMutableDictionary dictionary];
+    commonAttributes[MMEEventKeyEvent] = event.name;
+    commonAttributes[MMEEventKeyCreated] = [self formattedDateString];
+    [commonAttributes addEntriesFromDictionary:attributes];
+    event.attributes = commonAttributes;
+    return event;
+}
 
 + (instancetype)turnstileEventWithAttributes:(NSDictionary *)attributes {
     MMEEvent *turnstileEvent = [[MMEEvent alloc] init];
@@ -12,12 +24,12 @@
     return turnstileEvent;
 }
 
-+ (instancetype)telemetryMetricsEventWithDateString:(NSString *)dateString attributes:(NSDictionary *)attributes {
++ (instancetype)telemetryMetricsEventWithAttributes:(NSDictionary *)attributes {
     MMEEvent *telemetryMetrics = [[MMEEvent alloc] init];
     telemetryMetrics.name = MMEEventTypeTelemetryMetrics;
     NSMutableDictionary *commonAttributes = [NSMutableDictionary dictionary];
     commonAttributes[MMEEventKeyEvent] = telemetryMetrics.name;
-    commonAttributes[MMEEventKeyCreated] = dateString;
+    commonAttributes[MMEEventKeyCreated] = [self formattedDateString];
     [commonAttributes addEntriesFromDictionary:attributes];
     telemetryMetrics.attributes = attributes;
     return telemetryMetrics;
@@ -51,12 +63,12 @@
     return visitEvent;
 }
 
-+ (instancetype)mapLoadEventWithDateString:(NSString *)dateString commonEventData:(MMECommonEventData *)commonEventData; {
++ (instancetype)mapLoadEventWithCommonEventData:(MMECommonEventData *)commonEventData; {
     MMEEvent *mapLoadEvent = [[MMEEvent alloc] init];
     mapLoadEvent.name = MMEEventTypeMapLoad;
     NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
     attributes[MMEEventKeyEvent] = mapLoadEvent.name;
-    attributes[MMEEventKeyCreated] = dateString;
+    attributes[MMEEventKeyCreated] = [self formattedDateString];
     attributes[MMEEventKeyVendorID] = commonEventData.vendorId;
     attributes[MMEEventKeyModel] = commonEventData.model;
     attributes[MMEEventKeyOperatingSystem] = commonEventData.iOSVersion;
@@ -68,12 +80,12 @@
     return mapLoadEvent;
 }
 
-+ (instancetype)mapTapEventWithDateString:(NSString *)dateString attributes:(NSDictionary *)attributes {
++ (instancetype)mapTapEventWithAttributes:(NSDictionary *)attributes {
     MMEEvent *mapTapEvent = [[MMEEvent alloc] init];
     mapTapEvent.name = MMEEventTypeMapTap;
     NSMutableDictionary *commonAttributes = [NSMutableDictionary dictionary];
     commonAttributes[MMEEventKeyEvent] = mapTapEvent.name;
-    commonAttributes[MMEEventKeyCreated] = dateString;
+    commonAttributes[MMEEventKeyCreated] = [self formattedDateString];
     commonAttributes[MMEEventKeyOrientation] = [self deviceOrientation];
     commonAttributes[MMEEventKeyWifi] = @([[MMEReachability reachabilityForLocalWiFi] isReachableViaWiFi]);
     [commonAttributes addEntriesFromDictionary:attributes];
@@ -81,12 +93,12 @@
     return mapTapEvent;
 }
 
-+ (instancetype)mapDragEndEventWithDateString:(NSString *)dateString attributes:(NSDictionary *)attributes {
++ (instancetype)mapDragEndEventWithAttributes:(NSDictionary *)attributes {
     MMEEvent *mapTapEvent = [[MMEEvent alloc] init];
     mapTapEvent.name = MMEEventTypeMapDragEnd;
     NSMutableDictionary *commonAttributes = [NSMutableDictionary dictionary];
     commonAttributes[MMEEventKeyEvent] = mapTapEvent.name;
-    commonAttributes[MMEEventKeyCreated] = dateString;
+    commonAttributes[MMEEventKeyCreated] = [self formattedDateString];
     commonAttributes[MMEEventKeyOrientation] = [self deviceOrientation];
     commonAttributes[MMEEventKeyWifi] = @([[MMEReachability reachabilityForLocalWiFi] isReachableViaWiFi]);
     [commonAttributes addEntriesFromDictionary:attributes];
@@ -94,23 +106,23 @@
     return mapTapEvent;
 }
 
-+ (instancetype)mapOfflineDownloadStartEventWithDateString:(NSString *)dateString attributes:(NSDictionary *)attributes {
++ (instancetype)mapOfflineDownloadStartEventWithAttributes:(NSDictionary *)attributes {
     MMEEvent *mapOfflineDownloadEvent = [[MMEEvent alloc] init];
     mapOfflineDownloadEvent.name = MMEventTypeOfflineDownloadStart;
     NSMutableDictionary *commonAttributes = [NSMutableDictionary dictionary];
     commonAttributes[MMEEventKeyEvent] = mapOfflineDownloadEvent.name;
-    commonAttributes[MMEEventKeyCreated] = dateString;
+    commonAttributes[MMEEventKeyCreated] = [self formattedDateString];
     [commonAttributes addEntriesFromDictionary:attributes];
     mapOfflineDownloadEvent.attributes = commonAttributes;
     return mapOfflineDownloadEvent;
 }
 
-+ (instancetype)mapOfflineDownloadEndEventWithDateString:(NSString *)dateString attributes:(NSDictionary *)attributes {
++ (instancetype)mapOfflineDownloadEndEventWithAttributes:(NSDictionary *)attributes {
     MMEEvent *mapOfflineDownloadEvent = [[MMEEvent alloc] init];
     mapOfflineDownloadEvent.name = MMEventTypeOfflineDownloadEnd;
     NSMutableDictionary *commonAttributes = [NSMutableDictionary dictionary];
     commonAttributes[MMEEventKeyEvent] = mapOfflineDownloadEvent.name;
-    commonAttributes[MMEEventKeyCreated] = dateString;
+    commonAttributes[MMEEventKeyCreated] = [self formattedDateString];
     [commonAttributes addEntriesFromDictionary:attributes];
     mapOfflineDownloadEvent.attributes = commonAttributes;
     return mapOfflineDownloadEvent;
@@ -158,6 +170,11 @@
     [commonAttributes addEntriesFromDictionary:attributes];
     carplayEvent.attributes = commonAttributes;
     return carplayEvent;
+}
+
++ (MMECommonEventData *)commonEventData {
+    MMECommonEventData *commonEventData = [[MMECommonEventData alloc] init];
+    return commonEventData;
 }
 
 + (NSInteger)contentSizeScale {
@@ -223,6 +240,11 @@
             break;
     }
     return result;
+}
+
++ (NSString *)formattedDateString {
+    MMENSDateWrapper *dateWrapper = [[MMENSDateWrapper alloc] init];
+    return [dateWrapper formattedDateStringForDate:[dateWrapper date]];
 }
 
 - (BOOL)isEqualToEvent:(MMEEvent *)event {

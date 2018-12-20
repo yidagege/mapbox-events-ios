@@ -7,15 +7,16 @@
 @property (nonatomic, copy) NSString *name;
 @property (nonatomic, copy) NSDictionary *attributes;
 
++ (instancetype)eventWithName:(NSString *)name attributes:(NSDictionary *)attributes;
 + (instancetype)turnstileEventWithAttributes:(NSDictionary *)attributes;
-+ (instancetype)telemetryMetricsEventWithDateString:(NSString *)dateString attributes:(NSDictionary *)attributes;
++ (instancetype)telemetryMetricsEventWithAttributes:(NSDictionary *)attributes;
 + (instancetype)locationEventWithAttributes:(NSDictionary *)attributes instanceIdentifer:(NSString *)instanceIdentifer commonEventData:(MMECommonEventData *)commonEventData;
 + (instancetype)visitEventWithAttributes:(NSDictionary *)attributes;
-+ (instancetype)mapLoadEventWithDateString:(NSString *)dateString commonEventData:(MMECommonEventData *)commonEventData;
-+ (instancetype)mapTapEventWithDateString:(NSString *)dateString attributes:(NSDictionary *)attributes;
-+ (instancetype)mapDragEndEventWithDateString:(NSString *)dateString attributes:(NSDictionary *)attributes;
-+ (instancetype)mapOfflineDownloadStartEventWithDateString:(NSString *)dateString attributes:(NSDictionary *)attributes;
-+ (instancetype)mapOfflineDownloadEndEventWithDateString:(NSString *)dateString attributes:(NSDictionary *)attributes;
++ (instancetype)mapLoadEventWithCommonEventData:(MMECommonEventData *)commonEventData;
++ (instancetype)mapTapEventWithAttributes:(NSDictionary *)attributes;
++ (instancetype)mapDragEndEventWithAttributes:(NSDictionary *)attributes;
++ (instancetype)mapOfflineDownloadStartEventWithAttributes:(NSDictionary *)attributes;
++ (instancetype)mapOfflineDownloadEndEventWithAttributes:(NSDictionary *)attributes;
 + (instancetype)navigationEventWithName:(NSString *)name attributes:(NSDictionary *)attributes;
 + (instancetype)visionEventWithName:(NSString *)name attributes:(NSDictionary *)attributes;
 + (instancetype)debugEventWithAttributes:(NSDictionary *)attributes;
