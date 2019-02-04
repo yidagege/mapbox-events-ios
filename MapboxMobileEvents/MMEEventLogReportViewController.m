@@ -1,3 +1,5 @@
+#ifdef MME_ENABLE_DEBUG_LOGGING
+
 #import "MMEEventLogReportViewController.h"
 #import "MMEConstants.h"
 
@@ -97,3 +99,4 @@
 
 @end
 
+#endif

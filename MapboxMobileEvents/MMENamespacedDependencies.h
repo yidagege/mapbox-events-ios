@@ -43,12 +43,14 @@
 #define MMEEvent __NS_SYMBOL(MMEEvent)
 #endif
 
+#ifdef MME_ENABLE_DEBUG_LOGGING
 #ifndef MMEEventLogReportViewController
 #define MMEEventLogReportViewController __NS_SYMBOL(MMEEventLogReportViewController)
 #endif
 
 #ifndef MMEEventLogger
 #define MMEEventLogger __NS_SYMBOL(MMEEventLogger)
+#endif
 #endif
 
 #ifndef MMEEventsConfiguration
@@ -377,6 +379,7 @@
 #define MMEResponseKey __NS_SYMBOL(MMEResponseKey)
 #endif
 
+#ifdef MME_ENABLE_DEBUG_LOGGING
 #ifndef MMEDebugEventType
 #define MMEDebugEventType __NS_SYMBOL(MMEDebugEventType)
 #endif
@@ -419,6 +422,7 @@
 
 #ifndef MMEDebugEventTypeTelemetryMetrics
 #define MMEDebugEventTypeTelemetryMetrics __NS_SYMBOL(MMEDebugEventTypeTelemetryMetrics)
+#endif
 #endif
 
 #ifndef MMEEventTypeAppUserTurnstile
@@ -741,12 +745,14 @@
 #define MMEEventSource __NS_SYMBOL(MMEEventSource)
 #endif
 
+#ifdef MME_ENABLE_DEBUG_LOGGING
 #ifndef MMELoggerHTML
 #define MMELoggerHTML __NS_SYMBOL(MMELoggerHTML)
 #endif
 
 #ifndef MMELoggerShareableHTML
 #define MMELoggerShareableHTML __NS_SYMBOL(MMELoggerShareableHTML)
+#endif
 #endif
 
 #ifndef MMELocationManagerRegionIdentifier

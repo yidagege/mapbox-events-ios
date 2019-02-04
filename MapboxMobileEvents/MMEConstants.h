@@ -16,6 +16,8 @@ extern NSString * const MMEAPIClientHTTPMethodPost;
 extern NSString * const MMEAPIClientHTTPMethodGet;
 extern NSString * const MMEErrorDomain;
 
+
+#ifdef MME_ENABLE_DEBUG_LOGGING
 // Debug types
 extern NSString * const MMEDebugEventType;
 extern NSString * const MMEDebugEventTypeFlush;
@@ -28,6 +30,7 @@ extern NSString * const MMEDebugEventTypeBackgroundTask;
 extern NSString * const MMEDebugEventTypeMetricCollection;
 extern NSString * const MMEDebugEventTypeLocationManager;
 extern NSString * const MMEDebugEventTypeTelemetryMetrics;
+#endif
 
 // Event types
 extern NSString * const MMEEventTypeAppUserTurnstile;
@@ -115,9 +118,11 @@ extern NSString * const MMEResponseKey;
 // SDK event source
 extern NSString * const MMEEventSource;
 
+#ifdef MME_ENABLE_DEBUG_LOGGING
 // Log reporter HTML
 extern NSString * const MMELoggerHTML;
 extern NSString * const MMELoggerShareableHTML;
+#endif
 
 @interface MMEConstants: NSObject
 

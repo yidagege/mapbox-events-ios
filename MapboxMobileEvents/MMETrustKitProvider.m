@@ -1,16 +1,24 @@
 #import "MMETrustKitProvider.h"
 #import "MMEHashProvider.h"
+
+#ifdef MME_ENABLE_DEBUG_LOGGING
 #import "MMEEventLogger.h"
+#endif
+
 #import "TrustKit.h"
 
 @implementation MMETrustKitProvider
 
 + (TrustKit *)trustKitWithUpdatedConfiguration:(MMEEventsConfiguration *)configuration {
 
-    if (![MMEEventLogger.sharedLogger isEnabled]) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
+    if (![MMEEventLogger.sharedLogger isEnabled])
+#endif
+    {
         void (^loggerBlock)(NSString *) = ^void(NSString *message){};
         [TrustKit setLoggerBlock:loggerBlock];
     }
+
     
     MMEHashProvider *hashProvider = [[MMEHashProvider alloc] init];
     if (configuration) {

@@ -5,7 +5,11 @@
 #import "MMECommonEventData.h"
 #import "MMEConstants.h"
 #import "MMEAPIClient.h"
+
+#ifdef MME_ENABLE_DEBUG_LOGGING
 #import "MMEEventLogger.h"
+#endif
+
 #import "MMEEventsConfiguration.h"
 #import "MMEConfigurator.h"
 #import "MMETimerManager.h"
@@ -164,15 +168,19 @@
             __weak __typeof__(self) weakSelf = self;
             _backgroundTaskIdentifier = [self.application beginBackgroundTaskWithExpirationHandler:^{
                 __strong __typeof__(weakSelf) strongSelf = weakSelf;
+#ifdef MME_ENABLE_DEBUG_LOGGING
                 [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeBackgroundTask,
                                                      MMEEventKeyLocalDebugDescription: @"Ending background task",
                                                      @"Identifier": @(strongSelf.backgroundTaskIdentifier)}];
+#endif
                 [self.application endBackgroundTask:strongSelf.backgroundTaskIdentifier];
                 strongSelf.backgroundTaskIdentifier = UIBackgroundTaskInvalid;
             }];
+#ifdef MME_ENABLE_DEBUG_LOGGING
             [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeBackgroundTask,
                                                  MMEEventKeyLocalDebugDescription: @"Initiated background task",
                                                  @"Identifier": @(_backgroundTaskIdentifier)}];
+#endif
             [self flush];
             [self sendTelemetryMetricsEvent];
             [self resetEventQueuing];
@@ -194,8 +202,10 @@
 
 - (void)flush {
     if (self.paused) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeFlush,
                                              MMEEventKeyLocalDebugDescription: @"Aborting flushing of event queue because collection is paused."}];
+#endif
         return;
     }
     
@@ -209,9 +219,11 @@
     
     NSArray *events = [self.eventQueue copy];
     [self postEvents:events];
-    
+
+#ifdef MME_ENABLE_DEBUG_LOGGING
     [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeFlush,
                                          MMEEventKeyLocalDebugDescription:@"flush"}];
+#endif
 }
 
 - (void)resetEventQueuing {
@@ -220,13 +232,17 @@
 }
 
 - (void)postEvents:(NSArray *)events {
+#ifdef MME_ENABLE_DEBUG_LOGGING
     NSUInteger eventsCount = events.count;
+#endif
     
     [self.metricsManager updateMetricsFromEventQueue:events];
     
     __weak __typeof__(self) weakSelf = self;
     [self.apiClient postEvents:events completionHandler:^(NSError * _Nullable error) {
         __strong __typeof__(weakSelf) strongSelf = weakSelf;
+
+#ifdef MME_ENABLE_DEBUG_LOGGING
         if (error) {
             [strongSelf pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypePostFailed,
                                                        MMEEventKeyLocalDebugDescription: @"Network error",
@@ -236,12 +252,15 @@
                                                        MMEEventKeyLocalDebugDescription: @"post",
                                                        @"debug.eventsCount": @(eventsCount)}];
         }
+#endif
         
         
         if (strongSelf.backgroundTaskIdentifier != UIBackgroundTaskInvalid) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
             [strongSelf pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeBackgroundTask,
                                                        MMEEventKeyLocalDebugDescription: @"Ending background task",
                                                        @"Identifier": @(strongSelf.backgroundTaskIdentifier)}];
+#endif
             [strongSelf.application endBackgroundTask:strongSelf.backgroundTaskIdentifier];
             strongSelf.backgroundTaskIdentifier = UIBackgroundTaskInvalid;
         }
@@ -252,45 +271,59 @@
     [self.configurationUpdater updateConfigurationFromAPIClient:self.apiClient];
     
     if (self.nextTurnstileSendDate && [[self.dateWrapper date] timeIntervalSinceDate:self.nextTurnstileSendDate] < 0) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
         NSString *debugDescription = [NSString stringWithFormat:@"Turnstile event already sent; waiting until %@ to send another one", self.nextTurnstileSendDate];
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTurnstile,
                                              MMEEventKeyLocalDebugDescription: debugDescription}];
+#endif
         return;
     }
     
     if (!self.apiClient.accessToken) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTurnstileFailed,
                                              MMEEventKeyLocalDebugDescription: @"No access token sent, can not send turntile event"}];
+#endif
         return;
     }
     
     if (!self.apiClient.userAgentBase) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTurnstileFailed,
                                              MMEEventKeyLocalDebugDescription: @"No user agent base set, can not send turntile event"}];
+#endif
         return;
     }
     
     if (!self.apiClient.hostSDKVersion) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTurnstileFailed,
                                              MMEEventKeyLocalDebugDescription: @"No host SDK version set, can not send turntile event"}];
+#endif
         return;
     }
     
     if (!self.commonEventData.vendorId) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTurnstileFailed,
                                              MMEEventKeyLocalDebugDescription: @"No vendor id available, can not send turntile event"}];
+#endif
         return;
     }
     
     if (!self.commonEventData.model) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTurnstileFailed,
                                              MMEEventKeyLocalDebugDescription: @"No model available, can not send turntile event"}];
+#endif
         return;
     }
     
     if (!self.commonEventData.iOSVersion) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTurnstileFailed,
                                              MMEEventKeyLocalDebugDescription: @"No iOS version available, can not send turntile event"}];
+#endif
         return;
     }
     
@@ -305,29 +338,37 @@
                                                MMEEventKeyEnabledTelemetry: @([self isEnabled])};
     
     MMEEvent *turnstileEvent = [MMEEvent turnstileEventWithAttributes:turnstileEventAttributes];
+#ifdef MME_ENABLE_DEBUG_LOGGING
     [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTurnstile,
                                          MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"Sending turnstile event: %@", turnstileEvent]}];
     [MMEEventLogger.sharedLogger logEvent:turnstileEvent];
+#endif
     
     __weak __typeof__(self) weakSelf = self;
     [self.apiClient postEvent:turnstileEvent completionHandler:^(NSError * _Nullable error) {
         __strong __typeof__(weakSelf) strongSelf = weakSelf;
         if (error) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
             [strongSelf pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTurnstile,
                                                  MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"Could not send turnstile event: %@", error]}];
+#endif
             return;
         }
         
         [strongSelf updateNextTurnstileSendDate];
+#ifdef MME_ENABLE_DEBUG_LOGGING
         [strongSelf pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTurnstile,
                                                    MMEEventKeyLocalDebugDescription: @"Sent turnstile event"}];
+#endif
     }];
 }
 
 - (void)sendTelemetryMetricsEvent {
     MMEEvent *telemetryMetricsEvent = [self.metricsManager generateTelemetryMetricsEvent];
+#ifdef MME_ENABLE_DEBUG_LOGGING
     [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTurnstile,
                                          MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"Sending telemetryMetrics event: %@", telemetryMetricsEvent]}];
+#endif
     
     if (telemetryMetricsEvent) {
         __weak __typeof__(self) weakSelf = self;
@@ -335,13 +376,17 @@
             __strong __typeof__(weakSelf) strongSelf = weakSelf;
             [strongSelf.metricsManager resetMetrics];
             if (error) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
                 [strongSelf pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTelemetryMetrics,
                                                            MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"Could not send telemetryMetrics event: %@", error]}];
+#endif
                 return;
             }
-            
+
+#ifdef MME_ENABLE_DEBUG_LOGGING
             [strongSelf pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTurnstile,
                                                        MMEEventKeyLocalDebugDescription: @"Sent telemetryMetrics event"}];
+#endif
         }];
     }
 }
@@ -384,13 +429,17 @@
     }
 
     if (event) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypePush,
                                              MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"Pushing event: %@", event]}];
+#endif
         [self pushEvent:event];
     } else {
         event = [MMEEvent eventWithDateString:[self.dateWrapper formattedDateStringForDate:[self.dateWrapper date]] name:name attributes:attributes];
+#ifdef MME_ENABLE_DEBUG_LOGGING
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypePush,
                                              MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"Pushing generic event: %@", event]}];
+#endif
         [self pushEvent:event];
     }
 }
@@ -404,11 +453,17 @@
 }
 
 - (void)setDebugLoggingEnabled:(BOOL)debugLoggingEnabled {
+#ifdef MME_ENABLE_DEBUG_LOGGING
     MMEEventLogger.sharedLogger.enabled = debugLoggingEnabled;
+#endif
 }
 
 - (BOOL)isDebugLoggingEnabled {
+#ifdef MME_ENABLE_DEBUG_LOGGING
     return [MMEEventLogger.sharedLogger isEnabled];
+#else
+    return NO;
+#endif
 }
 
 #pragma mark - Internal API
@@ -434,11 +489,15 @@
 }
 
 - (void)pauseMetricsCollection {
+#ifdef MME_ENABLE_DEBUG_LOGGING
     [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeMetricCollection,
                                          MMEEventKeyLocalDebugDescription: @"Pausing metrics collection..."}];
+#endif
     if (self.isPaused) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeMetricCollection,
                                              MMEEventKeyLocalDebugDescription: @"Already paused"}];
+#endif
         return;
     }
     
@@ -447,16 +506,22 @@
     [self.eventQueue removeAllObjects];
     
     [self.locationManager stopUpdatingLocation];
+#ifdef MME_ENABLE_DEBUG_LOGGING
     [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeLocationManager,
                                          MMEEventKeyLocalDebugDescription: @"Paused and location manager stopped"}];
+#endif
 }
 
 - (void)resumeMetricsCollection {
+#ifdef MME_ENABLE_DEBUG_LOGGING
     [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeMetricCollection,
                                          MMEEventKeyLocalDebugDescription: @"Resuming metrics collection..."}];
+#endif
     if (!self.isPaused || ![self isEnabled]) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeMetricCollection,
                                              MMEEventKeyLocalDebugDescription: @"Already running"}];
+#endif
         return;
     }
     
@@ -465,8 +530,10 @@
     if (self.locationMetricsEnabled) {
         [self.locationManager startUpdatingLocation];
     }
+#ifdef MME_ENABLE_DEBUG_LOGGING
     [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeLocationManager,
                                          MMEEventKeyLocalDebugDescription: @"Resumed and location manager started"}];
+#endif
 }
 
 - (void)updateNextTurnstileSendDate {
@@ -474,9 +541,11 @@
     // turnstile events can be sent as much as once per calendar day and always at the start of a session
     // when a map load happens.
     self.nextTurnstileSendDate = [self.dateWrapper startOfTomorrowFromDate:[self.dateWrapper date]];
-    
+
+#ifdef MME_ENABLE_DEBUG_LOGGING
     [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTurnstile,
                                          MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"Set next turnstile date to: %@", self.nextTurnstileSendDate]}];
+#endif
 }
 
 - (void)pushEvent:(MMEEvent *)event {
@@ -485,8 +554,10 @@
     }
     
     [self.eventQueue addObject:event];
+#ifdef MME_ENABLE_DEBUG_LOGGING
     [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypePush,
                                          MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"Added event to event queue; event queue now has %ld events", (long)self.eventQueue.count]}];
+#endif
     
     if (self.eventQueue.count >= self.configuration.eventFlushCountThreshold) {
         [self flush];
@@ -500,15 +571,19 @@
 }
 
 - (void)pushDebugEventWithAttributes:(MMEMapboxEventAttributes *)attributes {
+#ifdef MME_ENABLE_DEBUG_LOGGING
     MMEMutableMapboxEventAttributes *combinedAttributes = [MMEMutableMapboxEventAttributes dictionaryWithDictionary:attributes];
     [combinedAttributes setObject:[self.dateWrapper formattedDateStringForDate:[self.dateWrapper date]] forKey:@"created"];
     [combinedAttributes setObject:self.uniqueIdentifer.rollingInstanceIdentifer forKey:@"instance"];
     MMEEvent *debugEvent = [MMEEvent debugEventWithAttributes:combinedAttributes];
     [MMEEventLogger.sharedLogger logEvent:debugEvent];
+#endif
 }
 
 - (void)displayLogFileFromDate:(NSDate *)logDate {
+#ifdef MME_ENABLE_DEBUG_LOGGING
     [MMEEventLogger.sharedLogger readAndDisplayLogFileFromDate:logDate];
+#endif
 }
 
 #pragma mark - MMEConfiguratorDelegate
@@ -534,8 +609,10 @@
 #pragma mark - MMELocationManagerDelegate
 
 - (void)locationManager:(MMELocationManager *)locationManager didUpdateLocations:(NSArray *)locations {
+#ifdef MME_ENABLE_DEBUG_LOGGING
     [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeLocationManager,
                                          MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"Location manager sent %ld locations", (long)locations.count]}];
+#endif
     
     for (CLLocation *location in locations) {        
         MMEMapboxEventAttributes *eventAttributes = @{MMEEventKeyCreated: [self.dateWrapper formattedDateStringForDate:[location timestamp]],
@@ -552,6 +629,7 @@
     }
 }
 
+#ifdef MME_ENABLE_DEBUG_LOGGING
 - (void)locationManagerDidStartLocationUpdates:(MMELocationManager *)locationManager {
     [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeLocationManager,
                                          MMEEventKeyLocalDebugDescription: @"Location manager started location updates"}];
@@ -571,11 +649,14 @@
     [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeLocationManager,
                                          MMEEventKeyLocalDebugDescription: @"Location manager stopped location updates"}];
 }
+#endif
 
 - (void)locationManager:(MMELocationManager *)locationManager didVisit:(CLVisit *)visit {
+#ifdef MME_ENABLE_DEBUG_LOGGING
     [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeLocationManager,
                                          MMEEventKeyLocalDebugDescription: [NSString stringWithFormat:@"Location manager visit %@", visit]}];
-    
+#endif
+
     CLLocation *location = [[CLLocation alloc] initWithLatitude:visit.coordinate.latitude longitude:visit.coordinate.longitude];
     MMEMapboxEventAttributes *eventAttributes = @{MMEEventKeyCreated: [self.dateWrapper formattedDateStringForDate:[location timestamp]],
                                                   MMEEventKeyLatitude: @([location mme_latitudeRoundedWithPrecision:7]),

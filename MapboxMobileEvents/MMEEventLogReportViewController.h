@@ -1,3 +1,5 @@
+#ifdef MME_ENABLE_DEBUG_LOGGING
+
 #import <UIKit/UIKit.h>
 #import <WebKit/WebKit.h>
 
@@ -9,3 +11,4 @@
 
 @end
 
+#endif

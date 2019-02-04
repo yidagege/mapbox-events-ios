@@ -2,7 +2,10 @@
 #import "MMEReachability.h"
 #import "MMEConstants.h"
 #import "MMENSDateWrapper.h"
+
+#ifdef MME_ENABLE_DEBUG_LOGGING
 #import "MMEEventLogger.h"
+#endif
 
 @interface MMEMetricsManager ()
 
@@ -148,23 +151,29 @@
 
 - (MMEEvent *)generateTelemetryMetricsEvent {
     if (self.metrics.date && [self.metrics.date timeIntervalSinceDate:[self.dateWrapper startOfTomorrowFromDate:self.metrics.date]] < 0) {
+#ifdef MME_ENABLE_DEBUG_LOGGING
         NSString *debugDescription = [NSString stringWithFormat:@"TelemetryMetrics event isn't ready to be sent; waiting until %@ to send", [self.dateWrapper startOfTomorrowFromDate:self.metrics.date]];
         [self pushDebugEventWithAttributes:@{MMEDebugEventType: MMEDebugEventTypeTelemetryMetrics,
                                              MMEEventKeyLocalDebugDescription: debugDescription}];
+#endif
         return nil;
     }
     
     MMEEvent *telemetryMetrics = [MMEEvent telemetryMetricsEventWithDateString:[self.dateWrapper formattedDateStringForDate:[self.dateWrapper date]] attributes:[self attributes]];
+#ifdef MME_ENABLE_DEBUG_LOGGING
     [MMEEventLogger.sharedLogger logEvent:telemetryMetrics];
+#endif
     
     return telemetryMetrics;
 }
 
+#ifdef MME_ENABLE_DEBUG_LOGGING
 - (void)pushDebugEventWithAttributes:(NSDictionary *)attributes {
     NSMutableDictionary *combinedAttributes = [NSMutableDictionary dictionaryWithDictionary:attributes];
     [combinedAttributes setObject:[self.dateWrapper formattedDateStringForDate:[self.dateWrapper date]] forKey:@"created"];
     MMEEvent *debugEvent = [MMEEvent debugEventWithAttributes:attributes];
     [[MMEEventLogger sharedLogger] logEvent:debugEvent];
 }
+#endif
 
 @end
