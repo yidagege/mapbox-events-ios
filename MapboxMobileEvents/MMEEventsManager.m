@@ -1,22 +1,30 @@
-#import "MMEEventsManager.h"
-#import "MMEEvent.h"
-#import "MMELocationManager.h"
-#import "MMEUniqueIdentifier.h"
-#import "MMECommonEventData.h"
-#import "MMEConstants.h"
-#import "MMEAPIClient.h"
-#import "MMEEventLogger.h"
-#import "MMEEventsConfiguration.h"
-#import "MMEConfigurator.h"
-#import "MMETimerManager.h"
-#import "MMEDispatchManager.h"
-#import "MMEUIApplicationWrapper.h"
-#import "MMEDate.h"
-#import "MMECategoryLoader.h"
+#import <CoreLocation/CoreLocation.h>
+#import <CoreFoundation/CoreFoundation.h>
+#if TARGET_OS_MACOS
+#import <Cocoa/Cocoa.h>
+#elif TARGET_OS_IOS || TARGET_OS_TVOS
+#import <UIKit/UIKit.h>
+#endif
+
 #import "CLLocation+MMEMobileEvents.h"
 #import "CLLocationManager+MMEMobileEvents.h"
+
+#import "MMEAPIClient.h"
+#import "MMECategoryLoader.h"
+#import "MMECommonEventData.h"
+#import "MMEConfigurator.h"
+#import "MMEConstants.h"
+#import "MMEDate.h"
+#import "MMEDispatchManager.h"
+#import "MMEEvent.h"
+#import "MMEEventLogger.h"
+#import "MMEEventsConfiguration.h"
+#import "MMEEventsManager.h"
+#import "MMELocationManager.h"
 #import "MMEMetricsManager.h"
-#import <CoreLocation/CoreLocation.h>
+#import "MMETimerManager.h"
+#import "MMEUIApplicationWrapper.h"
+#import "MMEUniqueIdentifier.h"
 
 @interface MMEEventsManager () <MMELocationManagerDelegate, MMEConfiguratorDelegate>
 
@@ -460,6 +468,35 @@
 
 - (BOOL)isDebugLoggingEnabled {
     return [MMEEventLogger.sharedLogger isEnabled];
+}
+
+#pragma mark - Error & Exception Reporting
+
+- (MMEEvent *)reportError:(NSError *)eventsError {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(eventsManager:didEncounterError:)]) {
+        [self.delegate eventsManager:self didEncounterError:eventsError];
+    }
+
+    NSError *createError = nil;
+    MMEEvent *errorEvent = [MMEEvent crashEventReporting:eventsError error:&createError];
+
+    if (errorEvent) {
+        [self pushEvent:errorEvent];
+    }
+    else {
+        [self pushEvent:[MMEEvent debugEventWithError:createError]];
+    }
+
+    return errorEvent;
+}
+
+- (MMEEvent *)reportException:(NSException *)exception {
+    NSError *exceptionalError = [NSError errorWithDomain:MMEErrorDomain code:MMEErrorException userInfo:@{
+        MMEErrorDescriptionKey: @"Exception Report",
+        MMEErrorUnderlyingExceptionKey: exception
+    }];
+
+    return [self reportError:exceptionalError];
 }
 
 #pragma mark - Internal API
