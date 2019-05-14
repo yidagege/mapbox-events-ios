@@ -269,7 +269,7 @@
         self = [super init];
     }
     else if ([NSJSONSerialization isValidJSONObject:eventAttributes]) {
-        if (![eventAttributes.allKeys containsObject:MMEEventKeyEvent]) { // requried
+        if (![eventAttributes.allKeys containsObject:MMEEventKeyEvent]) { // is required
             *error = [NSError errorWithDomain:MMEErrorDomain code:MMEErrorEventInit userInfo:@{
                 MMEErrorDescriptionKey: @"eventAttributes does not contain MMEEventKeyEvent",
                 MMEErrorEventAttributesKey: eventAttributes

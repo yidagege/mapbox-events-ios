@@ -71,31 +71,31 @@ typedef enum {
 }
 
 - (NSComparisonResult) compare:(NSDate *)date {
-    NSComparisonResult comprable = NSOrderedSame;
+    NSComparisonResult comparable = NSOrderedSame;
 
     switch (self.fakeType) {
         case MMEDateFakeEarlier:
-            comprable = (date.timeIntervalSinceReferenceDate < self.timeIntervalSinceReferenceDate) ? NSOrderedSame : NSOrderedAscending;
+            comparable = (date.timeIntervalSinceReferenceDate < self.timeIntervalSinceReferenceDate) ? NSOrderedSame : NSOrderedAscending;
             break;
 
         case MMEDateFakeLater:
-            comprable = (date.timeIntervalSinceReferenceDate > self.timeIntervalSinceReferenceDate) ? NSOrderedSame : NSOrderedDescending;
+            comparable = (date.timeIntervalSinceReferenceDate > self.timeIntervalSinceReferenceDate) ? NSOrderedSame : NSOrderedDescending;
             break;
 
         case MMEDateFakeWhenever:
-            comprable = NSOrderedSame; // it's always whenever
+            comparable = NSOrderedSame; // it's always whenever
             break;
 
         case MMEDateFakeNever:
-            comprable = NSOrderedDescending; // never is always later
+            comparable = NSOrderedDescending; // never is always later
             break;
 
         default:
-            comprable = [super compare:date];
+            comparable = [super compare:date];
             break;
     }
 
-    return comprable;
+    return comparable;
 }
 
 @end

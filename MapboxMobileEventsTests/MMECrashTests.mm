@@ -8,18 +8,24 @@ using namespace Cedar::Doubles;
 
 SPEC_BEGIN(MMECrashSpec)
 
-describe(@"MMEEventsMangaer", ^{
+describe(@"MMEEventsManager", ^{
 
     context(@"- reportError:", ^{
         NSError *testError = [NSError errorWithDomain:MMEErrorDomain code:-666 userInfo:nil];
         MMEEvent *testEvent = [MMEEventsManager.sharedManager reportError:testError];
-        testEvent should_not be_nil;
+
+        it(@"should return an event", ^{
+            testEvent should_not be_nil;
+        });
     });
 
     context(@"- reportException:", ^{
         NSException *testException = [NSException exceptionWithName:NSGenericException reason:MMEEventKeyErrorNoReason userInfo:nil];
         MMEEvent *testEvent = [MMEEventsManager.sharedManager reportException:testException];
-        testEvent should_not be_nil;
+
+        it(@"should return an event", ^{
+            testEvent should_not be_nil;
+        });
     });
 
     context(@"- report raised and caught exception", ^{
@@ -29,7 +35,10 @@ describe(@"MMEEventsMangaer", ^{
         }
         @catch (NSException *exception) {
             MMEEvent *testEvent = [MMEEventsManager.sharedManager reportException:testException];
-            testEvent should_not be_nil;
+            
+            it(@"should return an event", ^{
+                testEvent should_not be_nil;
+            });
         }
     });
 });

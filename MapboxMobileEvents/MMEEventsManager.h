@@ -143,7 +143,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)eventsManager:(MMEEventsManager *)eventsManager didVisit:(CLVisit *)visit;
 #endif
 
-/** @brief eventsManager:didEncouterError: reports errors encoutered by the Events Manager to the delegate
+/** @brief reports errors encoutered by the Events Manager to the delegate
     @param eventsManager the shared events manager
     @param error the encountered NSError object
 */

@@ -174,31 +174,39 @@ describe(@"MMEEvent", ^{
     });
 
     context(@"eventWithAttributes:", ^{
-        it(@"should return nil with invalid attributes:", ^{
-            MMEEvent *attributed = [MMEEvent eventWithAttributes:@{@"invalid":@"attributes"}];
+        MMEEvent *attributed = [MMEEvent eventWithAttributes:@{@"invalid":@"attributes"}];
 
+        it(@"should return nil with invalid attributes:", ^{
             attributed should be_nil;
         });
     });
 
     context(@"carplayEvent", ^{
-        it(@"should create a carplay event", ^{
-            MMEEvent *carplay = [MMEEvent carplayEventWithName:MMEventTypeNavigationCarplayConnect attributes:testAttrs];
+        MMEEvent *carplay = [MMEEvent carplayEventWithName:MMEventTypeNavigationCarplayConnect attributes:testAttrs];
 
+        it(@"should create a carplay event", ^{
             carplay should_not be_nil;
         });
     });
 
     context(@"isEqualToEvent:", ^{
+        NSDictionary *eventAttributes = @{MMEEventKeyEvent: @"test.event"};
+        MMEEvent *firstEvent = [MMEEvent eventWithAttributes:eventAttributes];
+        MMEEvent *secondEvent = [MMEEvent eventWithAttributes:eventAttributes];
 
         it(@"should not be true for two consective events with the same attributes, or for nil", ^{
-            NSDictionary *eventAttributes = @{MMEEventKeyEvent: @"test.event"};
-            MMEEvent *firstEvent = [MMEEvent eventWithAttributes:eventAttributes];
-            MMEEvent *secondEvent = [MMEEvent eventWithAttributes:eventAttributes];
-
             [firstEvent isEqual:secondEvent] should_not be_truthy;
+        });
+
+        it(@"should be false for nil", ^{
             [firstEvent isEqual:nil] should_not be_truthy;
+        });
+
+        it(@"should be true in the identity case", ^{
             [firstEvent isEqual:firstEvent] should be_truthy;
+        });
+
+        it(@"should be false for an object of a different class", ^{
             [firstEvent isEqual:eventAttributes] should_not be_truthy;
         });
     });
@@ -221,17 +229,6 @@ describe(@"MMEEvent", ^{
             (original == duplicate) should_not be_truthy;
         });
     });
-
-    context(@"NSSecureCoding", ^{
-        it(@"should create an isEqual: but not identity copy", ^{
-            MMEEvent *original = [MMEEvent eventWithAttributes:@{MMEEventKeyEvent: @"test.event"}];
-            MMEEvent *duplicate = original.copy;
-
-            [original isEqual:duplicate] should be_truthy;
-            (original == duplicate) should_not be_truthy;
-        });
-    });
-
 });
 
 SPEC_END
